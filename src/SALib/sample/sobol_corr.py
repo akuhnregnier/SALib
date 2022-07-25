@@ -1,6 +1,6 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import openturns as ot
-
 
 from ..util import read_param_file
 from ..util.distrs import make_input_distribution
@@ -9,9 +9,9 @@ from ..util.distrs import make_input_distribution
 def sample(problem, n_sample, seed=None):
     """
     Creates the Monte-Carlo samples for correlated variables.
-    
-    A pick and freeze strategy is done considering the distribution of the 
-    input sample. This method creates the input samples and evaluate them 
+
+    A pick and freeze strategy is done considering the distribution of the
+    input sample. This method creates the input samples and evaluate them
     through the model to create the output sample. Note that the variables
     should be considered independent.
 
@@ -19,13 +19,13 @@ def sample(problem, n_sample, seed=None):
     ----------
     model : callable
         The model function.
-        
+
     n_sample : int
         The sampling size of the Monte-Carlo estimation.
-        
+
     n_realization : int, optional (default=1)
-        The number of realization of the meta-model.  
-        
+        The number of realization of the meta-model.
+
     References
     ----------
     .. [1] Thierry A Mara, Stefano Tarantola, Paola Annoni, Non-parametric
@@ -33,18 +33,16 @@ def sample(problem, n_sample, seed=None):
         https://hal.archives-ouvertes.fr/hal-01182302/file/Mara15EMS_HAL.pdf
     """
     assert isinstance(problem, dict), "problem should be of dict type"
-    dim = problem['num_vars']
+    dim = problem["num_vars"]
 
     input_distribution = make_input_distribution(problem)
     if seed:
         ot.RandomGenerator.SetSeed(seed)
         np.random.seed(seed)
 
-    assert isinstance(n_sample, int), \
-        "The number of sample should be an integer"
-    assert n_sample > 0, \
-        "The number of sample should be positive: %d<0" % (n_sample)
-    n_pairs = int(dim*(dim-1) / 2)
+    assert isinstance(n_sample, int), "The number of sample should be an integer"
+    assert n_sample > 0, "The number of sample should be positive: %d<0" % (n_sample)
+    n_pairs = int(dim * (dim - 1) / 2)
 
     # Gaussian distribution
     norm_dist = ot.Normal(dim)
@@ -53,11 +51,12 @@ def sample(problem, n_sample, seed=None):
     U_1 = np.asarray(norm_dist.getSample(n_sample))
     U_2 = np.asarray(norm_dist.getSample(n_sample))
 
-    
     blocks = []
     for i in range(dim):
         # Copy of the input dstribution
-        margins = [ot.Distribution(input_distribution.getMarginal(j)) for j in range(dim)]
+        margins = [
+            ot.Distribution(input_distribution.getMarginal(j)) for j in range(dim)
+        ]
         copula = input_distribution.getCopula()
 
         # 1) Pick and Freeze
@@ -65,7 +64,7 @@ def sample(problem, n_sample, seed=None):
         U_3_i[:, 0] = U_1[:, 0]
         U_4_i = U_2.copy()
         U_4_i[:, -1] = U_1[:, -1]
-        
+
         # 2) Permute the margins and the copula
         order_i = np.roll(range(dim), -i)
         order_i_inv = np.roll(range(dim), i)
@@ -92,11 +91,11 @@ def sample(problem, n_sample, seed=None):
         X_2_i = X_2_i[:, order_i_inv]
         X_3_i = X_3_i[:, order_i_inv]
         X_4_i = X_4_i[:, order_i_inv]
-        
+
         # 4) Model evaluations
         X = np.r_[X_1_i, X_2_i, X_3_i, X_4_i]
         blocks.append(X)
-    
+
     return np.r_[tuple(blocks)]
 
 
@@ -111,7 +110,7 @@ def cli_parse(parser):
     ----------
     Updated argparse object
     """
-    
+
     return parser
 
 
@@ -124,5 +123,9 @@ def cli_action(args):
     """
     problem = read_param_file(args.paramfile)
     param_values = sample(problem, args.samples, args.seed)
-    np.savetxt(args.output, param_values, delimiter=args.delimiter,
-               fmt='%.' + str(args.precision) + 'e')
+    np.savetxt(
+        args.output,
+        param_values,
+        delimiter=args.delimiter,
+        fmt="%." + str(args.precision) + "e",
+    )

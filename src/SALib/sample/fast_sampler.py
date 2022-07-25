@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 import math
 
 import numpy as np
 
+from ..util import read_param_file, scale_samples
 from . import common_args
-from .. util import scale_samples, read_param_file
 
 
 def sample(problem, N, M=4, seed=None):
@@ -26,11 +27,11 @@ def sample(problem, N, M=4, seed=None):
 
     References
     ----------
-    .. [1] Cukier, R.I., Fortuin, C.M., Shuler, K.E., Petschek, A.G., 
-           Schaibly, J.H., 1973. 
-           Study of the sensitivity of coupled reaction systems to uncertainties 
-           in rate coefficients. I theory. 
-           Journal of Chemical Physics 59, 3873–3878. 
+    .. [1] Cukier, R.I., Fortuin, C.M., Shuler, K.E., Petschek, A.G.,
+           Schaibly, J.H., 1973.
+           Study of the sensitivity of coupled reaction systems to uncertainties
+           in rate coefficients. I theory.
+           Journal of Chemical Physics 59, 3873–3878.
            https://doi.org/10.1063/1.1680571
 
     .. [2] Saltelli, A., S. Tarantola, and K. P.-S. Chan (1999).  "A
@@ -42,10 +43,12 @@ def sample(problem, N, M=4, seed=None):
         np.random.seed(seed)
 
     if N <= 4 * M**2:
-        raise ValueError("""
-        Sample size N > 4M^2 is required. M=4 by default.""")
+        raise ValueError(
+            """
+        Sample size N > 4M^2 is required. M=4 by default."""
+        )
 
-    D = problem['num_vars']
+    D = problem["num_vars"]
 
     omega = np.zeros([D])
     omega[0] = math.floor((N - 1) / (2 * M))
@@ -93,8 +96,15 @@ def cli_parse(parser):
     ----------
     Updated argparse object
     """
-    parser.add_argument('-M', '--m-coef', type=int, required=False, default=4,
-                        help='M coefficient, default 4', dest='M')
+    parser.add_argument(
+        "-M",
+        "--m-coef",
+        type=int,
+        required=False,
+        default=4,
+        help="M coefficient, default 4",
+        dest="M",
+    )
 
     return parser
 
@@ -108,8 +118,12 @@ def cli_action(args):
     """
     problem = read_param_file(args.paramfile)
     param_values = sample(problem, N=args.samples, M=args.M, seed=args.seed)
-    np.savetxt(args.output, param_values, delimiter=args.delimiter,
-               fmt='%.' + str(args.precision) + 'e')
+    np.savetxt(
+        args.output,
+        param_values,
+        delimiter=args.delimiter,
+        fmt="%." + str(args.precision) + "e",
+    )
 
 
 if __name__ == "__main__":
